@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_pipa_web/src/core/contants.dart';
 import 'package:flutter_application_pipa_web/src/pages/create_post.dart';
 import 'package:flutter_application_pipa_web/src/pages/login.dart';
-import 'package:flutter_application_pipa_web/src/pages/register.dart';
+import 'package:flutter_application_pipa_web/src/pages/register_user.dart';
+import 'package:flutter_application_pipa_web/src/pages/user_edit.dart';
+import 'package:flutter_application_pipa_web/src/pages/user_management.dart';
 import 'package:flutter_application_pipa_web/src/providers/app_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,7 +20,7 @@ class MyApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Colégio PIPA Web',
       theme: ref.watch(themeSwitchProvider) ? kLightTheme : kDarkTheme,
-      home: RegisterPage(),
+      home: UserManagementPage()
     );
   }
 }
