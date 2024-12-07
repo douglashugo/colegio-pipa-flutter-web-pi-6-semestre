@@ -1,6 +1,6 @@
+import 'package:f290_ldmp_web_desktop_playground/src/features/home/presentation/view_avisos.dart';
 import 'package:flutter/material.dart';
-
-import 'view_avisos.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Classe de aviso
 class Notice {
@@ -8,15 +8,17 @@ class Notice {
   final String title; // Título do aviso
   final String content; // Conteúdo do aviso
 
-  Notice(this.date, this.title, this.content);
-}
+  Notice({required this.date, required this.title, required this.content});
 
-// Dados de exemplo
-List<Notice> notices = [
-  Notice('2024-12-06', 'Aviso Importante', 'Este é um aviso importante para todos.'),
-  Notice('2024-12-05', 'Reunião da equipe', 'Reunião com todos os membros da equipe amanhã.'),
-  Notice('2024-12-04', 'Novo horário de atendimento', 'A partir de agora, o horário de atendimento será das 9h às 18h.'),
-];
+  // Método para converter do JSON
+  factory Notice.fromJson(Map<String, dynamic> json) {
+    return Notice(
+      date: json['created_at'] ?? '',
+      title: json['title'] ?? '',
+      content: json['description'] ?? '',
+    );
+  }
+}
 
 // Página principal de avisos
 class NoticesPage extends StatefulWidget {
@@ -27,41 +29,75 @@ class NoticesPage extends StatefulWidget {
 }
 
 class _NoticesPageState extends State<NoticesPage> {
+  final SupabaseClient _client = Supabase.instance.client; // Obtem o cliente padrão do Supabase
+  List<Notice> notices = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchNotices();
+  }
+
+  Future<void> _fetchNotices() async {
+    try {
+      final response = await _client
+          .from('posts_categories')
+          .select('title, description, created_at')
+          .eq('cat_id', 5) // Filtro para categoria com ID 5
+          .order('created_at', ascending: false);
+
+      if (response.error != null) {
+        throw response.error!;
+      }
+
+      final data = response.data as List<dynamic>;
+      setState(() {
+        notices = data.map((e) => Notice.fromJson(e)).toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar avisos: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Ordenar os avisos para garantir que o mais recente apareça primeiro
-    notices.sort((a, b) {
-      return b.date.compareTo(a.date); // Ordem decrescente (mais recente primeiro)
-    });
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Todos os avisos',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-            )),
-      ),
-      body: Container(
-        padding: const EdgeInsets.all(16),
-        child: ListView.builder(
-          itemCount: notices.length, // Exibe a quantidade de avisos
-          itemBuilder: (context, index) {
-            final notice = notices[index]; // Pega o aviso na posição atual
-            return InkWell(
-              onTap: () {
-                // Navegar para a página de visualização do aviso
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => NoticePage(),
-                  ),
-                );
-              },
-              child: NoticeCard(notice: notice), // Exibe o Card do aviso
-            );
-          },
+        title: const Text(
+          'Todos os avisos',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+          ),
         ),
       ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : notices.isEmpty
+              ? const Center(child: Text('Nenhum aviso encontrado.'))
+              : ListView.builder(
+                  itemCount: notices.length,
+                  itemBuilder: (context, index) {
+                    final notice = notices[index];
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NoticePage(),
+                          ),
+                        );
+                      },
+                      child: NoticeCard(notice: notice),
+                    );
+                  },
+                ),
     );
   }
 }
@@ -109,4 +145,3 @@ class NoticeCard extends StatelessWidget {
     );
   }
 }
-

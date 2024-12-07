@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart' as quill;
-
-final _quillController = quill.QuillController.basic();
+import 'package:file_picker/file_picker.dart';
 
 class RegisterContentPage extends StatefulWidget {
   @override
@@ -29,22 +27,33 @@ class _RegisterContentPageState extends State<RegisterContentPage> {
   // Função para simular envio ao banco de dados
   void _submitForm() {
     if (_formKey.currentState?.validate() ?? false) {
-      // Suponha que aqui conectamos ao banco de dados e enviamos as informações
+      // Simulação de envio
       print('Categoria: $_selectedCategory');
       print('Título: ${_titleController.text}');
       print('Conteúdo: ${_contentController.text}');
       print('Link do YouTube: ${_youtubeLinkController.text}');
       print('Imagem: $_imagePath');
-      // Aqui entraria o código para salvar no banco de dados
+    }
+  }
+
+  // Função para selecionar uma imagem
+  Future<void> _pickImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        _imagePath = result.files.first.path;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(''),
-      ),
+      
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -107,7 +116,7 @@ class _RegisterContentPageState extends State<RegisterContentPage> {
                             : null,
                       ),
                       SizedBox(height: 16),
-                      // Campo para conteúdo (editor de texto rico)
+                      // Campo para conteúdo
                       TextFormField(
                         controller: _contentController,
                         maxLines: 8,
@@ -141,20 +150,12 @@ class _RegisterContentPageState extends State<RegisterContentPage> {
                         },
                       ),
                       SizedBox(height: 16),
-                      // Campo para upload de imagem
+                      // Botão para upload de imagem
                       ElevatedButton.icon(
-                        onPressed: () {
-                          // Implementar o upload de imagem
-                          setState(() {
-                            _imagePath = 'imagem_teste.jpg'; // Simulação
-                          });
-                        },
-                        icon: Icon(Icons.upload),
-                        label: Text('Fazer upload da imagem'),
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.black,
-                        ),
-                      ),
+                        onPressed: _pickImage,
+                        icon: Icon(Icons.image),
+                        label: Text('Selecionar Imagem'),
+                                            ),
                       if (_imagePath != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 8.0),
@@ -167,7 +168,8 @@ class _RegisterContentPageState extends State<RegisterContentPage> {
                           onPressed: _submitForm,
                           child: Text('Enviar'),
                           style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.green,
                           ),
                         ),
                       ),

@@ -6,6 +6,7 @@ import 'home_content_view.dart';
 import 'list_avisos.dart';
 import 'list_contents.dart';
 import 'register_responsavel.dart';
+import 'upload_cardapio.dart';
 import 'view_content.dart';
 
 class HomePage extends StatefulWidget {
@@ -42,8 +43,8 @@ class _HomePageState extends State<HomePage> {
     RegisterNoticePage(),
     ContentPageList(),
     RegisterContentPage(),
-    RegisterResponsiblePage() // Placeholder for "Adicionar usuário"
-    // ROTA DA CLASSE DA PAGINA DE UPLOAD DO CARDAPIO
+    RegisterResponsiblePage(), // Placeholder for "Adicionar usuário"
+    CardapioUploadScreen()
   ];
 
   @override

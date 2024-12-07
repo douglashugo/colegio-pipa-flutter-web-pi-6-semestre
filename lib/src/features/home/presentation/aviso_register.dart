@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 
 class RegisterNoticePage extends StatefulWidget {
   @override
@@ -15,24 +16,32 @@ class _RegisterNoticePageState extends State<RegisterNoticePage> {
   // Função para simular o envio ao banco de dados
   void _submitForm() {
     if (_formKey.currentState?.validate() ?? false) {
-      // Suponha que aqui conectamos ao banco de dados e enviamos as informações
       print('Título: ${_titleController.text}');
       print('Conteúdo: ${_contentController.text}');
       print('Imagem: $_imagePath');
       setState(() {
         _isSubmitSuccess = true; // Mostrar a mensagem de sucesso
       });
-      // Aqui entraria o código para salvar no banco de dados
+    }
+  }
+
+  // Função para abrir o FilePicker e selecionar uma imagem
+  Future<void> _selectImage() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+    );
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        _imagePath = result.files.single.path!;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
- 
       appBar: AppBar(
         title: Text(''),
-         
       ),
       body: Center(
         child: Padding(
@@ -50,7 +59,6 @@ class _RegisterNoticePageState extends State<RegisterNoticePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Título da página
                       Center(
                         child: Text(
                           'Cadastrar novo aviso',
@@ -61,7 +69,6 @@ class _RegisterNoticePageState extends State<RegisterNoticePage> {
                         ),
                       ),
                       SizedBox(height: 16),
-                      // Campo para título
                       TextFormField(
                         controller: _titleController,
                         decoration: InputDecoration(
@@ -73,7 +80,6 @@ class _RegisterNoticePageState extends State<RegisterNoticePage> {
                             : null,
                       ),
                       SizedBox(height: 16),
-                      // Campo para conteúdo (sem formatação)
                       TextFormField(
                         controller: _contentController,
                         maxLines: 8,
@@ -87,18 +93,10 @@ class _RegisterNoticePageState extends State<RegisterNoticePage> {
                             : null,
                       ),
                       SizedBox(height: 16),
-                      // Campo para upload de imagem 
                       ElevatedButton.icon(
-                        onPressed: () {
-                          // Implementar o upload de imagem 
-                          setState(() {
-                            _imagePath = 'imagem_teste.jpg'; // Simulação
-                          });
-                        },
+                        onPressed: _selectImage,
                         icon: Icon(Icons.upload),
                         label: Text('Fazer upload da imagem'),
-                        style: ElevatedButton.styleFrom(
-                        ),
                       ),
                       if (_imagePath != null)
                         Padding(
@@ -106,13 +104,10 @@ class _RegisterNoticePageState extends State<RegisterNoticePage> {
                           child: Text('Imagem selecionada: $_imagePath'),
                         ),
                       SizedBox(height: 16),
-                      // Botão de enviar
                       Center(
                         child: ElevatedButton(
                           onPressed: _submitForm,
                           child: Text('Enviar'),
-                          style: ElevatedButton.styleFrom(
-                          ),
                         ),
                       ),
                       if (_isSubmitSuccess)
@@ -120,7 +115,9 @@ class _RegisterNoticePageState extends State<RegisterNoticePage> {
                           padding: const EdgeInsets.only(top: 16.0),
                           child: Text(
                             'Aviso enviado com sucesso!',
-                            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                     ],
