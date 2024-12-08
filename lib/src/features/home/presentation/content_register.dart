@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert'; // Para manipulação de base64
 
 class RegisterContentPage extends StatefulWidget {
   @override
@@ -8,35 +10,94 @@ class RegisterContentPage extends StatefulWidget {
 
 class _RegisterContentPageState extends State<RegisterContentPage> {
   final _formKey = GlobalKey<FormState>();
-  String? _selectedCategory;
+  String? _selectedtag;
+  int? _selectedTagId; // Para armazenar o ID da tag selecionada
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
-  final _youtubeLinkController = TextEditingController(); // Novo controlador
-  String? _imagePath;
+  String? _imageBase64;
+  int? _imageId;
 
-  // Lista de categorias
-  final _categories = [
-    'Educação',
-    'Lazer',
-    'Desenvolvimento',
-    'Higiene',
-    'Brincadeiras',
-    'Dúvidas',
-  ];
+  // Lista de tags será carregada do banco de dados
+  List<Map<String, dynamic>> _tags = [];
 
-  // Função para simular envio ao banco de dados
-  void _submitForm() {
-    if (_formKey.currentState?.validate() ?? false) {
-      // Simulação de envio
-      print('Categoria: $_selectedCategory');
-      print('Título: ${_titleController.text}');
-      print('Conteúdo: ${_contentController.text}');
-      print('Link do YouTube: ${_youtubeLinkController.text}');
-      print('Imagem: $_imagePath');
+  // Função para carregar as tags do banco de dados (Supabase)
+  Future<void> _loadTags() async {
+    final response =
+        await Supabase.instance.client.from('tags').select('id, title');
+
+    if (response != null) {
+      final data = response as List<dynamic>;
+      setState(() {
+        _tags = data
+            .map((tag) => {'id': tag['id'], 'title': tag['title']})
+            .toList();
+      });
+    } else {
+      print('Erro ao carregar as tags: ${response}');
     }
   }
 
-  // Função para selecionar uma imagem
+  Future<void> _uploadImage() async {
+    if (_imageBase64 != null) {
+      final data = {
+        'image': _imageBase64,
+        'create_at': DateTime.now().toUtc().toIso8601String(),
+        'update_at': DateTime.now().toUtc().toIso8601String(),
+      };
+
+      final response =
+          await Supabase.instance.client.from('images').insert(data).select();
+
+      if (response != null) {
+        final data = response as List<dynamic>;
+        setState(() {
+          _imageId = data[0]['id']; // Atribui o ID da imagem retornado
+        });
+        print('Imagem carregada com sucesso, ID: $_imageId');
+      } else {
+        print('Erro ao carregar imagem: ${response}');
+      }
+    }
+  }
+
+  void _submitForm() async {
+    if (_selectedTagId == null) {
+      print("Por favor, selecione uma tag válida.");
+      return; // Evitar inserir se nenhuma tag foi selecionada
+    }
+
+    if (_imageId == null) {
+      print("Por favor, faça upload de uma imagem.");
+      return; // Evitar inserir se a imagem não foi carregada
+    }
+
+    final data = {
+      'title': _titleController.text,
+      'description': _contentController.text,
+      'cat_id': 3, // Categoria fixa para conteúdo
+      'tag_id': _selectedTagId,
+      'img_id': _imageId,
+      'created_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+
+    // A inserção no Supabase não deve incluir o id, pois o banco vai gerar automaticamente
+    final response = await Supabase.instance.client
+        .from('posts_categories')
+        .insert(data)
+        .select();
+
+    if (response != null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Conteúdo cadastrado com sucesso!'),
+      ));
+      print("Conteúdo cadastrado com sucesso!");
+    } else {
+      print('Erro ao cadastrar: ${response}');
+    }
+  }
+
+  // Função para selecionar uma imagem e converter em base64
   Future<void> _pickImage() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.image,
@@ -44,16 +105,27 @@ class _RegisterContentPageState extends State<RegisterContentPage> {
     );
 
     if (result != null && result.files.isNotEmpty) {
-      setState(() {
-        _imagePath = result.files.first.path;
-      });
+      final file = result.files.first;
+      final bytes = file.bytes;
+      if (bytes != null) {
+        setState(() {
+          _imageBase64 = base64Encode(bytes); // Converte a imagem para base64
+        });
+        // Chama a função para fazer o upload da imagem
+        await _uploadImage();
+      }
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTags(); // Carrega as tags do banco quando a tela for carregada
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -81,26 +153,29 @@ class _RegisterContentPageState extends State<RegisterContentPage> {
                         ),
                       ),
                       SizedBox(height: 16),
-                      // Dropdown para categoria
+                      // Dropdown para categoria (tags carregadas do banco)
                       DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: 'Categoria',
+                        decoration: const InputDecoration(
+                          labelText: 'Tag',
                           border: OutlineInputBorder(),
                         ),
-                        value: _selectedCategory,
-                        items: _categories
-                            .map((category) => DropdownMenuItem(
-                                  value: category,
-                                  child: Text(category),
+                        value: _selectedtag,
+                        items: _tags
+                            .map((category) => DropdownMenuItem<String>(
+                                  value: category['title'] as String,
+                                  child: Text(category['title'] as String),
                                 ))
                             .toList(),
                         onChanged: (value) {
                           setState(() {
-                            _selectedCategory = value;
+                            _selectedtag = value;
+                            // Buscar o id correspondente à tag selecionada
+                            _selectedTagId = _tags.firstWhere(
+                                (tag) => tag['title'] == value)['id'];
                           });
                         },
                         validator: (value) => value == null
-                            ? 'Por favor, selecione uma categoria'
+                            ? 'Por favor, selecione uma tag'
                             : null,
                       ),
                       SizedBox(height: 16),
@@ -130,36 +205,16 @@ class _RegisterContentPageState extends State<RegisterContentPage> {
                             : null,
                       ),
                       SizedBox(height: 16),
-                      // Novo campo para link do YouTube
-                      TextFormField(
-                        controller: _youtubeLinkController,
-                        decoration: InputDecoration(
-                          labelText: 'Link do YouTube',
-                          border: OutlineInputBorder(),
-                          hintText: 'https://www.youtube.com/watch?v=...',
-                        ),
-                        validator: (value) {
-                          if (value != null && value.isNotEmpty) {
-                            final urlPattern = RegExp(
-                                r'^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$');
-                            if (!urlPattern.hasMatch(value)) {
-                              return 'Por favor, insira um link válido do YouTube.';
-                            }
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 16),
                       // Botão para upload de imagem
                       ElevatedButton.icon(
                         onPressed: _pickImage,
                         icon: Icon(Icons.image),
                         label: Text('Selecionar Imagem'),
-                                            ),
-                      if (_imagePath != null)
+                      ),
+                      if (_imageBase64 != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 8.0),
-                          child: Text('Imagem selecionada: $_imagePath'),
+                          child: Text('Imagem selecionada'),
                         ),
                       SizedBox(height: 16),
                       // Botão de enviar
