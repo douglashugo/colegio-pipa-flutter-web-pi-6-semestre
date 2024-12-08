@@ -29,7 +29,8 @@ class NoticesPage extends StatefulWidget {
 }
 
 class _NoticesPageState extends State<NoticesPage> {
-  final SupabaseClient _client = Supabase.instance.client; // Obtem o cliente padrão do Supabase
+  final SupabaseClient _client =
+      Supabase.instance.client; // Obtem o cliente padrão do Supabase
   List<Notice> notices = [];
   bool isLoading = true;
 
@@ -47,11 +48,11 @@ class _NoticesPageState extends State<NoticesPage> {
           .eq('cat_id', 5) // Filtro para categoria com ID 5
           .order('created_at', ascending: false);
 
-      if (response.error != null) {
-        throw response.error!;
+      if (response == null) {
+        throw response;
       }
 
-      final data = response.data as List<dynamic>;
+      final data = response as List<dynamic>;
       setState(() {
         notices = data.map((e) => Notice.fromJson(e)).toList();
         isLoading = false;

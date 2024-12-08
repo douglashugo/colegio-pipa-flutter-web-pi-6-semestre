@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../list_contents.dart'; 
-
+import '../list_contents.dart';
 
 // class Post {
 //   final String category;
@@ -11,7 +10,6 @@ import '../list_contents.dart';
 
 //   Post(this.category, this.imageUrl, this.title, this.content);
 // }
-
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -31,7 +29,8 @@ class PostCard extends StatelessWidget {
             height: 120,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(post.imageUrl, fit: BoxFit.cover),  // Imagem do conteúdo
+              child: Image.network(post.imageBase64,
+                  fit: BoxFit.cover), // Imagem do conteúdo
             ),
           ),
           // Conteúdo do post
@@ -43,7 +42,7 @@ class PostCard extends StatelessWidget {
                 children: [
                   // Categoria do post
                   Text(
-                    post.category,
+                    post.tags,
                     style: TextStyle(
                       color: Colors.black,
                       fontWeight: FontWeight.bold,
@@ -60,7 +59,8 @@ class PostCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   // Início do conteúdo
-                  Text(post.content, maxLines: 3, overflow: TextOverflow.ellipsis),
+                  Text(post.content,
+                      maxLines: 3, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),

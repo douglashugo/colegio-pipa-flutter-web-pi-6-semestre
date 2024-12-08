@@ -1,24 +1,24 @@
+import 'dart:convert'; // Para lidar com Base64
 import 'package:flutter/material.dart';
-
-import 'view_content.dart';
-import 'widgets/postcard.dart'; 
-
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Post {
-  final String category;
-  final String imageUrl;
+  final String tags;
+  final String imageBase64;
   final String title;
   final String content;
 
-  Post(this.category, this.imageUrl, this.title, this.content);
-}
+  Post(this.tags, this.imageBase64, this.title, this.content);
 
-List<Post> posts = [
-  Post('Educação', 'https://via.placeholder.com/150', 'Título do Post 1', 'Conteúdo do post 1...'),
-  Post('Lazer', 'https://via.placeholder.com/150', 'Título do Post 2', 'Conteúdo do post 2...'),
-  Post('Desenvolvimento', 'https://via.placeholder.com/150', 'Título do Post 3', 'Conteúdo do post 3...'),
-  // Adicione mais posts conforme necessário
-];
+  factory Post.fromMap(Map<String, dynamic> data) {
+    return Post(
+      data['tags']['title'] ?? 'Sem tag', // Título da tag associada
+      data['images']['image'] ?? '', // Base64 da imagem do join com images
+      data['title'] ?? 'Sem título',
+      data['description'] ?? '',
+    );
+  }
+}
 
 class ContentPageList extends StatefulWidget {
   const ContentPageList({super.key});
@@ -28,7 +28,50 @@ class ContentPageList extends StatefulWidget {
 }
 
 class _ContentPageListState extends State<ContentPageList> {
-  List<String> selectedCategories = []; // Lista de categorias selecionadas
+  final List<Post> _posts = [];
+  bool _isLoading = true;
+  String? _errorMessage; // Para exibir erros
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPosts();
+  }
+
+  Future<void> _fetchPosts() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('posts_categories')
+          .select('*, tags(title), images(image)') // Join com tags e images
+          .neq('cat_id', 5);
+
+      if (response == null) {
+        throw response;
+      }
+
+      final data = response as List<dynamic>?;
+
+      if (data == null || data.isEmpty) {
+        // Se não houver dados, ajuste o estado
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      setState(() {
+        _posts.clear();
+        _posts.addAll(data.map((e) => Post.fromMap(e)).toList());
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Erro inesperado: $e';
+      });
+      print('Erro inesperado: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,79 +82,73 @@ class _ContentPageListState extends State<ContentPageList> {
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
       ),
-      body: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Filtro de Categorias
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Row(
-                children: [
-                  categoryButton('Educação'),
-                  categoryButton('Lazer'),
-                  categoryButton('Desenvolvimento'),
-                  categoryButton('Higiene'),
-                  categoryButton('Brincadeiras'),
-                  categoryButton('Dúvidas'),
-                ],
-              ),
-            ),
-            // Lista de Cards (aqui onde os posts são exibidos)
-            Expanded(
-              child: ListView.builder(
-                itemCount: filteredPosts.length, // Exibe a quantidade de posts filtrados
-                itemBuilder: (context, index) {
-                  final post = filteredPosts[index]; 
-                  return GestureDetector(
-                    onTap: () {
-                      // Navega para a página de visualização de conteúdo
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ContentPage(),
-                        ),
-                      );
-                    },
-                    child: PostCard(
-                      post: post, // Passa o post para o PostCard
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? Center(
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                  ),
+                )
+              : _posts.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Nenhum conteúdo encontrado.',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.all(16),
+                      child: ListView.builder(
+                        itemCount: _posts.length,
+                        itemBuilder: (context, index) {
+                          final post = _posts[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            elevation: 4,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (post.imageBase64.isNotEmpty)
+                                  Image.memory(
+                                    base64Decode(post.imageBase64),
+                                    height: 150,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        post.title,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        post.content,
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Chip(
+                                        label: Text(post.tags),
+                                        backgroundColor: Colors.blue.shade100,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Filtro de posts com base nas categorias selecionadas
-  List<Post> get filteredPosts {
-    if (selectedCategories.isEmpty) {
-      return posts; // Exibe todos os posts se nenhuma categoria for selecionada
-    }
-    return posts.where((post) => selectedCategories.contains(post.category)).toList();
-  }
-
-  // Filtro de categorias para adicionar ou remover da lista de categorias selecionadas
-  Widget categoryButton(String category) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(category),
-        selected: selectedCategories.contains(category),
-        onSelected: (isSelected) {
-          setState(() {
-            if (isSelected) {
-              selectedCategories.add(category); // Adiciona categoria à lista
-            } else {
-              selectedCategories.remove(category); // Remove categoria da lista
-            }
-          });
-        },
-      ),
     );
   }
 }
