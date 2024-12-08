@@ -15,7 +15,6 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final brightness = View.of(context).platformDispatcher.platformBrightness;
 
     // Use with Google Fonts package to use downloadable fonts
@@ -23,16 +22,14 @@ class App extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-       theme:  MaterialTheme(textTheme).light(),
+      theme: MaterialTheme(textTheme).light(),
       //  darkTheme:  MaterialTheme(textTheme).dark(),
       initialRoute: '/',
       routes: {
         '/': (context) => const HomePage(),
         '/novo-conteudo': (context) => RegisterContentPage(),
-        '/conteudo': (context) => ContentPage(), // Corrigido
         '/conteudos': (context) => ContentPageList(),
         '/avisos': (context) => NoticesPage(),
-        '/visualizar-aviso': (context) => NoticePage(),
         '/novo-aviso': (context) => RegisterNoticePage(),
 
         // Navigator.of(context).pushNamed('/novo-conteudo',);

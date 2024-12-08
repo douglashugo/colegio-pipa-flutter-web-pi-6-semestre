@@ -1,21 +1,34 @@
+import 'dart:typed_data';
+import 'dart:convert';
+
 import 'package:f290_ldmp_web_desktop_playground/src/features/home/presentation/view_avisos.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Classe de aviso
 class Notice {
-  final String date; // Data do aviso
-  final String title; // Título do aviso
-  final String content; // Conteúdo do aviso
+  final String date;
+  final String title;
+  final String content;
+  final String imageBase64;
 
-  Notice({required this.date, required this.title, required this.content});
+  Notice({
+    required this.date,
+    required this.title,
+    required this.content,
+    required this.imageBase64,
+  });
 
-  // Método para converter do JSON
+  // Método para decodificar a imagem Base64 em bytes
+  Uint8List get imageBytes => base64Decode(imageBase64);
+
   factory Notice.fromJson(Map<String, dynamic> json) {
     return Notice(
       date: json['created_at'] ?? '',
       title: json['title'] ?? '',
       content: json['description'] ?? '',
+      imageBase64: json['image'] ??
+          '', // Assumindo que a coluna da imagem no banco é 'image'
     );
   }
 }
@@ -91,7 +104,10 @@ class _NoticesPageState extends State<NoticesPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => NoticePage(),
+                            builder: (context) => NoticePage(
+                                notice: notice,
+                                onDelete:
+                                    _fetchNotices), // Passa o aviso e o callback para atualizar
                           ),
                         );
                       },

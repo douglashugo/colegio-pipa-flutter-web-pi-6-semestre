@@ -73,6 +73,16 @@ class _ContentPageListState extends State<ContentPageList> {
     }
   }
 
+  // Função para navegar para a página de detalhes do post
+  void _onPostTap(Post post) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ContentDetailPage(post: post),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,51 +114,106 @@ class _ContentPageListState extends State<ContentPageList> {
                         itemCount: _posts.length,
                         itemBuilder: (context, index) {
                           final post = _posts[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            elevation: 4,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (post.imageBase64.isNotEmpty)
-                                  Image.memory(
-                                    base64Decode(post.imageBase64),
-                                    height: 150,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                  ),
-                                Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        post.title,
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
+                          return GestureDetector(
+                            onTap: () => _onPostTap(post), // Ação de toque
+                            child: Card(
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              elevation: 4,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (post.imageBase64.isNotEmpty)
+                                    Image.memory(
+                                      base64Decode(post.imageBase64),
+                                      height:
+                                          200, // Ajuste a altura conforme necessário
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          post.title,
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        post.content,
-                                        style: const TextStyle(fontSize: 16),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Chip(
-                                        label: Text(post.tags),
-                                        backgroundColor: Colors.blue.shade100,
-                                      ),
-                                    ],
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          post.content,
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Chip(
+                                          label: Text(post.tags),
+                                          backgroundColor: Colors.blue.shade100,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           );
                         },
                       ),
                     ),
+    );
+  }
+}
+
+class ContentDetailPage extends StatelessWidget {
+  final Post post;
+
+  const ContentDetailPage({Key? key, required this.post}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(post.title),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Imagem
+              if (post.imageBase64.isNotEmpty)
+                Image.memory(
+                  base64Decode(post.imageBase64),
+                  height: 250,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              SizedBox(height: 16),
+              // Título
+              Text(
+                post.title,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              // Conteúdo
+              Text(
+                post.content,
+                style: TextStyle(fontSize: 18),
+              ),
+              SizedBox(height: 8),
+              // Tags
+              Chip(
+                label: Text(post.tags),
+                backgroundColor: Colors.blue.shade100,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

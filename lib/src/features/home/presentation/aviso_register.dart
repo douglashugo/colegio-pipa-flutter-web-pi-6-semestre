@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
 
 class RegisterNoticePage extends StatefulWidget {
   @override
@@ -10,30 +12,77 @@ class _RegisterNoticePageState extends State<RegisterNoticePage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
-  String? _imagePath;
-  bool _isSubmitSuccess = false;
+  String? _imageBase64;
+  int? _imageId; // ID da imagem carregada
 
-  // Função para simular o envio ao banco de dados
-  void _submitForm() {
-    if (_formKey.currentState?.validate() ?? false) {
-      print('Título: ${_titleController.text}');
-      print('Conteúdo: ${_contentController.text}');
-      print('Imagem: $_imagePath');
-      setState(() {
-        _isSubmitSuccess = true; // Mostrar a mensagem de sucesso
-      });
+  Future<void> _uploadImage() async {
+    if (_imageBase64 != null) {
+      final data = {
+        'image': _imageBase64,
+        'create_at': DateTime.now().toUtc().toIso8601String(),
+        'update_at': DateTime.now().toUtc().toIso8601String(),
+      };
+
+      final response =
+          await Supabase.instance.client.from('images').insert(data).select();
+
+      if (response != null) {
+        final data = response as List<dynamic>;
+        setState(() {
+          _imageId = data[0]['id']; // Armazena o ID da imagem no estado
+        });
+        print('Imagem carregada com sucesso, ID: $_imageId');
+      } else {
+        print('Erro ao carregar imagem: $response');
+      }
     }
   }
 
-  // Função para abrir o FilePicker e selecionar uma imagem
-  Future<void> _selectImage() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+  void _submitForm() async {
+    if (_imageId == null) {
+      print("Por favor, faça upload de uma imagem.");
+      return;
+    }
+
+    final data = {
+      'title': _titleController.text,
+      'description': _contentController.text,
+      'cat_id': 5, // Categoria fixa para aviso
+      'img_id': _imageId,
+      'created_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+
+    final response = await Supabase.instance.client
+        .from('posts_categories')
+        .insert(data)
+        .select();
+
+    if (response != null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Aviso cadastrado com sucesso!'),
+      ));
+      print("Aviso cadastrado com sucesso!");
+    } else {
+      print('Erro ao cadastrar: $response');
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final result = await FilePicker.platform.pickFiles(
       type: FileType.image,
+      allowMultiple: false,
     );
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _imagePath = result.files.single.path!;
-      });
+
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+      final bytes = file.bytes;
+      if (bytes != null) {
+        setState(() {
+          _imageBase64 = base64Encode(bytes); // Converte para base64
+        });
+        await _uploadImage(); // Faz o upload da imagem
+      }
     }
   }
 
@@ -41,7 +90,7 @@ class _RegisterNoticePageState extends State<RegisterNoticePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(''),
+        title: Text('Cadastrar Aviso'),
       ),
       body: Center(
         child: Padding(
@@ -94,14 +143,14 @@ class _RegisterNoticePageState extends State<RegisterNoticePage> {
                       ),
                       SizedBox(height: 16),
                       ElevatedButton.icon(
-                        onPressed: _selectImage,
-                        icon: Icon(Icons.upload),
-                        label: Text('Fazer upload da imagem'),
+                        onPressed: _pickImage,
+                        icon: Icon(Icons.image),
+                        label: Text('Selecionar Imagem'),
                       ),
-                      if (_imagePath != null)
+                      if (_imageBase64 != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 8.0),
-                          child: Text('Imagem selecionada: $_imagePath'),
+                          child: Text('Imagem selecionada'),
                         ),
                       SizedBox(height: 16),
                       Center(
@@ -110,16 +159,6 @@ class _RegisterNoticePageState extends State<RegisterNoticePage> {
                           child: Text('Enviar'),
                         ),
                       ),
-                      if (_isSubmitSuccess)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16.0),
-                          child: Text(
-                            'Aviso enviado com sucesso!',
-                            style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ),
                     ],
                   ),
                 ),
