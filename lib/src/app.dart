@@ -1,4 +1,5 @@
 import 'package:f290_ldmp_web_desktop_playground/src/core/theme/theme.dart';
+import 'package:f290_ldmp_web_desktop_playground/src/features/home/presentation/view_login.dart';
 import 'package:flutter/material.dart';
 
 import 'core/theme/util.dart';
@@ -26,7 +27,8 @@ class App extends StatelessWidget {
       //  darkTheme:  MaterialTheme(textTheme).dark(),
       initialRoute: '/',
       routes: {
-        '/': (context) => const HomePage(),
+        '/': (context) => Login(),
+        '/home': (context) => const HomePage(),
         '/novo-conteudo': (context) => RegisterContentPage(),
         '/conteudos': (context) => ContentPageList(),
         '/avisos': (context) => NoticesPage(),

@@ -22,29 +22,47 @@ class _HomePageState extends State<HomePage> {
   // Lista de páginas
   final List<Widget> pages = [
     HomeContentView(
-      avisos: List.generate(
-        10,
-        (index) => PostModel(
-          title: 'Título ${index + 1}',
-          content: 'Mussum ipsum cacildis vidis litrus abertis.',
-          imageUrl: 'https://picsum.photos/id/${index * 5}/1280/800',
+      avisos: [
+        PostModel(
+          title: 'Aviso 1',
+          content: 'Este é o conteúdo do aviso 1.',
+          imageUrl: 'https://picsum.photos/200/300',
         ),
-      ),
-      lembretes: List.generate(
-        4,
-        (index) => PostModel(
-          title: 'Lembrete ${index + 1}',
-          content: 'Mussum ipsum cacildis vidis litrus abertis.',
-          imageUrl: 'https://picsum.photos/id/${index * 7}/1280/800',
+        PostModel(
+          title: 'Aviso 2',
+          content: 'Este é o conteúdo do aviso 2.',
+          imageUrl: 'https://picsum.photos/200/300',
         ),
-      ),
+        PostModel(
+          title: 'Aviso 3',
+          content: 'Este é o conteúdo do aviso 3.',
+          imageUrl: 'https://picsum.photos/200/300',
+        ),
+      ],
+      lembretes: [
+        PostModel(
+          title: 'Lembrete 1',
+          content: 'Este é o conteúdo do lembrete 1.',
+          imageUrl: 'https://picsum.photos/200/300',
+        ),
+        PostModel(
+          title: 'Lembrete 2',
+          content: 'Este é o conteúdo do lembrete 2.',
+          imageUrl: 'https://picsum.photos/200/300',
+        ),
+        PostModel(
+          title: 'Lembrete 3',
+          content: 'Este é o conteúdo do lembrete 3.',
+          imageUrl: 'https://picsum.photos/200/300',
+        ),
+      ],
     ),
     NoticesPage(),
     RegisterNoticePage(),
     ContentPageList(),
     RegisterContentPage(),
-    RegisterResponsiblePage(), // Placeholder for "Adicionar usuário"
-    CardapioUploadScreen()
+    RegisterResponsiblePage(),
+    CardapioUploadScreen(),
   ];
 
   @override
@@ -64,9 +82,7 @@ class _HomePageState extends State<HomePage> {
             trailing: Flexible(
               child: Column(
                 mainAxisSize: MainAxisSize.max,
-                children: [
-                  
-                ],
+                children: [],
               ),
             ),
             selectedIndex: _selectedIndex,
