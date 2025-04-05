@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="flutter_application_pipa_web"
+        android:label="f290_ldmp_web_desktop_playground"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

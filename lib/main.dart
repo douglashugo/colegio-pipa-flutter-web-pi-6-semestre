@@ -1,23 +1,17 @@
+import 'package:f290_ldmp_web_desktop_playground/src/features/home/presentation/view_content.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_pipa_web/src/core/contants.dart';
-import 'package:flutter_application_pipa_web/src/pages/create_post.dart';
-import 'package:flutter_application_pipa_web/src/pages/login.dart';
-import 'package:flutter_application_pipa_web/src/providers/app_providers.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'src/app.dart';
 
 void main() async {
-  runApp(const ProviderScope(child: MyApp()));
-}
+ WidgetsFlutterBinding.ensureInitialized();
+ await dotenv.load(fileName: 'web/.env');
+ await Supabase.initialize(
+ url: dotenv.get('SB_URL'),
+ anonKey: dotenv.get('SB_ANON_KEY'),
+ );
 
-class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp(
-      title: 'Colégio PIPA Web',
-      theme: ref.watch(themeSwitchProvider) ? kLightTheme : kDarkTheme,
-      home: CreatePost(),
-    );
-  }
+ runApp(const App());
 }
